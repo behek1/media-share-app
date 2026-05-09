@@ -83,12 +83,16 @@ app.get('/files', (req, res) => {
         let filesData = [];
         files.forEach(file => {
             const ext = path.extname(file).toLowerCase();
-            const isVideo = ['.mp4', '.mkv', '.avi', '.mov', '.webm'].includes(ext);
-            filesData.push({
-                name: file,
-                url: `/uploads/${file}`,
-                isVideo: isVideo
-            });
+            const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mkv', '.avi', '.mov', '.webm'];
+            
+            if (allowedExts.includes(ext)) {
+                const isVideo = ['.mp4', '.mkv', '.avi', '.mov', '.webm'].includes(ext);
+                filesData.push({
+                    name: file,
+                    url: `/uploads/${file}`,
+                    isVideo: isVideo
+                });
+            }
         });
         
         // Sort by newest (assuming filename has Date.now())
