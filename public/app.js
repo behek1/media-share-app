@@ -118,8 +118,17 @@ document.addEventListener('DOMContentLoaded', () => {
         xhr.onload = function() {
             if (xhr.status === 200) {
                 const response = JSON.parse(xhr.responseText);
-                messageEl.textContent = response.msg;
-                messageEl.className = 'msg-success';
+                
+                if (response.isAdmin) {
+                    messageEl.textContent = response.msg;
+                    messageEl.className = 'msg-success';
+                    document.querySelector('header h1').innerHTML = 'Medya <span style="color: #ef4444;">Admin</span>';
+                    document.querySelector('.glass-panel').style.borderColor = '#ef4444';
+                    document.querySelector('.glass-panel').style.boxShadow = '0 25px 50px -12px rgba(239, 68, 68, 0.3)';
+                } else {
+                    messageEl.textContent = response.msg;
+                    messageEl.className = 'msg-success';
+                }
                 
                 setTimeout(() => {
                     resetUpload();
@@ -171,12 +180,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 galleryLoader.style.display = 'none';
                 refreshBtn.querySelector('i').classList.remove('fa-spin');
                 
-                if (data.length === 0) {
+                const filesList = Array.isArray(data) ? data : data.files;
+                const isAdmin = !Array.isArray(data) ? data.isAdmin : false;
+                
+                if (isAdmin) {
+                    document.querySelector('header h1').innerHTML = 'Medya <span style="color: #ef4444;">Admin</span>';
+                    document.querySelector('.glass-panel').style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                }
+                
+                if (!filesList || filesList.length === 0) {
                     emptyState.style.display = 'block';
                     return;
                 }
                 
-                data.forEach(file => {
+                filesList.forEach(file => {
                     const item = createMediaElement(file);
                     galleryGrid.appendChild(item);
                 });

