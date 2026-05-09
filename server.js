@@ -54,6 +54,29 @@ function checkFileType(file, cb) {
     }
 }
 
+// Helpers for IP and Metadata
+const metadataPath = path.join(uploadDir, 'metadata.json');
+
+function getClientIp(req) {
+    const forwarded = req.headers['x-forwarded-for'];
+    return forwarded ? forwarded.split(/, /)[0] : req.socket.remoteAddress;
+}
+
+function getMetadata() {
+    if (fs.existsSync(metadataPath)) {
+        try {
+            return JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+        } catch (e) {
+            return {};
+        }
+    }
+    return {};
+}
+
+function saveMetadata(data) {
+    fs.writeFileSync(metadataPath, JSON.stringify(data), 'utf8');
+}
+
 // Upload Endpoint
 app.post('/upload', (req, res) => {
     upload(req, res, (err) => {
@@ -63,6 +86,13 @@ app.post('/upload', (req, res) => {
         if (req.file == undefined) {
             return res.status(400).json({ msg: 'Lütfen bir dosya seçin!' });
         }
+        
+        // Save IP to metadata
+        const ip = getClientIp(req);
+        const metadata = getMetadata();
+        metadata[req.file.filename] = ip;
+        saveMetadata(metadata);
+
         res.json({
             msg: 'Dosya başarıyla yüklendi!',
             file: `uploads/${req.file.filename}`,
@@ -81,16 +111,21 @@ app.get('/files', (req, res) => {
         }
         
         let filesData = [];
+        const ip = getClientIp(req);
+        const metadata = getMetadata();
+
         files.forEach(file => {
             const ext = path.extname(file).toLowerCase();
             const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.mkv', '.avi', '.mov', '.webm'];
             
             if (allowedExts.includes(ext)) {
                 const isVideo = ['.mp4', '.mkv', '.avi', '.mov', '.webm'].includes(ext);
+                const canDelete = metadata[file] === ip;
                 filesData.push({
                     name: file,
                     url: `/uploads/${file}`,
-                    isVideo: isVideo
+                    isVideo: isVideo,
+                    canDelete: canDelete
                 });
             }
         });
@@ -100,6 +135,24 @@ app.get('/files', (req, res) => {
         
         res.json(filesData);
     });
+});
+
+// Delete Endpoint
+app.delete('/files/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const ip = getClientIp(req);
+    const metadata = getMetadata();
+    
+    if (metadata[filename] === ip) {
+        const filePath = path.join(uploadDir, filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            delete metadata[filename];
+            saveMetadata(metadata);
+            return res.json({ msg: 'Dosya silindi!' });
+        }
+    }
+    return res.status(403).json({ msg: 'Bu dosyayı silme yetkiniz yok veya dosya bulunamadı!' });
 });
 
 app.listen(PORT, () => {

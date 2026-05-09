@@ -208,13 +208,25 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
 
+        let deleteBtnHtml = '';
+        if (file.canDelete) {
+            deleteBtnHtml = `
+                <button class="delete-btn" data-filename="${file.name}" title="Sil">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+        }
+
         div.innerHTML = `
             ${previewHtml}
             <div class="media-info">
                 <div class="media-name" title="${file.name}">${file.name}</div>
-                <a href="${file.url}" download="${file.name}" class="download-btn">
-                    <i class="fa-solid fa-download"></i> İndir
-                </a>
+                <div class="action-buttons">
+                    <a href="${file.url}" download="${file.name}" class="download-btn">
+                        <i class="fa-solid fa-download"></i> İndir
+                    </a>
+                    ${deleteBtnHtml}
+                </div>
             </div>
         `;
         
@@ -227,6 +239,32 @@ document.addEventListener('DOMContentLoaded', () => {
             div.addEventListener('mouseleave', () => {
                 videoEl.pause();
                 videoEl.currentTime = 0;
+            });
+        }
+
+        // Delete functionality
+        const deleteBtn = div.querySelector('.delete-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                if(confirm('Bu dosyayı silmek istediğinize emin misiniz?')) {
+                    const filename = deleteBtn.getAttribute('data-filename');
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                    
+                    fetch(`/files/${filename}`, { method: 'DELETE' })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.msg === 'Dosya silindi!') {
+                                div.style.display = 'none';
+                            } else {
+                                alert(data.msg);
+                                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                            }
+                        })
+                        .catch(err => {
+                            alert('Silme sırasında bir hata oluştu.');
+                            deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                        });
+                }
             });
         }
         
