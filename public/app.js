@@ -119,16 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (xhr.status === 200) {
                 const response = JSON.parse(xhr.responseText);
                 
-                if (response.isAdmin) {
-                    messageEl.textContent = response.msg;
-                    messageEl.className = 'msg-success';
-                    document.querySelector('header h1').innerHTML = 'Medya <span style="color: #ef4444;">Admin</span>';
-                    document.querySelector('.glass-panel').style.borderColor = '#ef4444';
-                    document.querySelector('.glass-panel').style.boxShadow = '0 25px 50px -12px rgba(239, 68, 68, 0.3)';
-                } else {
-                    messageEl.textContent = response.msg;
-                    messageEl.className = 'msg-success';
-                }
+                messageEl.textContent = response.msg;
+                messageEl.className = 'msg-success';
                 
                 setTimeout(() => {
                     resetUpload();
@@ -326,5 +318,51 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         return div;
+    }
+
+    // Admin Login Logic
+    const adminBtn = document.getElementById('admin-login-btn');
+    const adminPass = document.getElementById('admin-pass');
+    
+    if (adminBtn && adminPass) {
+        adminBtn.addEventListener('click', () => {
+            const password = adminPass.value;
+            if (!password) return;
+            
+            adminBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            adminBtn.disabled = true;
+            
+            fetch('/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.isAdmin) {
+                    alert(data.msg);
+                    document.querySelector('header h1').innerHTML = 'Medya <span style="color: #ef4444;">Admin</span>';
+                    document.querySelector('.glass-panel').style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                    adminPass.value = '';
+                    loadFiles(); // Refresh files to see all delete buttons
+                } else {
+                    alert(data.msg);
+                }
+            })
+            .catch(err => {
+                alert('Bağlantı hatası!');
+            })
+            .finally(() => {
+                adminBtn.innerHTML = '>';
+                adminBtn.disabled = false;
+            });
+        });
+        
+        // Enter key support
+        adminPass.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                adminBtn.click();
+            }
+        });
     }
 });
