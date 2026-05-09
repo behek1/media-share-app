@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medya Paylaşım (Resim & Video)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Medya <span>Paylaş</span></h1>
+            <p>Fotoğraf ve videolarınızı hızlıca yükleyin, indirin ve paylaşın.</p>
+        </header>
+
+        <section class="upload-section glass-panel">
+            <form id="upload-form">
+                <div class="upload-area" id="drop-area">
+                    <input type="file" id="media-input" name="media" accept="image/*,video/*" hidden>
+                    <div class="upload-icon">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3>Buraya Sürükle Bırak veya Tıkla</h3>
+                    <p>Maksimum 100 MB (Resim veya Video)</p>
+                </div>
+                
+                <div class="file-preview" id="file-preview" style="display: none;">
+                    <div class="preview-content">
+                        <i class="fa-solid fa-file preview-icon"></i>
+                        <span id="preview-filename">dosya_adi.png</span>
+                    </div>
+                    <button type="button" class="remove-btn" id="remove-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div class="progress-container" id="progress-container" style="display: none;">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn" disabled>
+                    <span>Yükle</span> <i class="fa-solid fa-arrow-up"></i>
+                </button>
+                <div id="message"></div>
+            </form>
+        </section>
+
+        <section class="gallery-section">
+            <div class="gallery-header">
+                <h2><i class="fa-solid fa-images"></i> Son Yüklenenler</h2>
+                <button id="refresh-btn" class="icon-btn"><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+            
+            <div class="loader" id="gallery-loader" style="display: none;"></div>
+            
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- Medya öğeleri buraya yüklenecek -->
+            </div>
+            
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <i class="fa-regular fa-folder-open"></i>
+                <p>Henüz hiçbir dosya yüklenmedi.</p>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
