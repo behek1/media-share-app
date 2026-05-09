@@ -138,11 +138,16 @@ app.get('/files', (req, res) => {
             if (allowedExts.includes(ext)) {
                 const isVideo = ['.mp4', '.mkv', '.avi', '.mov', '.webm'].includes(ext);
                 const canDelete = isAdmin || metadata[file] === ip;
+                const votes = metadata.votes && metadata.votes[file] ? metadata.votes[file].length : 0;
+                const hasVoted = metadata.votes && metadata.votes[file] && metadata.votes[file].includes(ip);
+                
                 filesData.push({
                     name: file,
                     url: `/uploads/${file}`,
                     isVideo: isVideo,
-                    canDelete: canDelete
+                    canDelete: canDelete,
+                    votes: votes,
+                    hasVoted: hasVoted
                 });
             }
         });
@@ -166,11 +171,42 @@ app.delete('/files/:filename', (req, res) => {
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
             delete metadata[filename];
+            if (metadata.votes) delete metadata.votes[filename];
             saveMetadata(metadata);
             return res.json({ msg: 'Dosya silindi!' });
         }
     }
     return res.status(403).json({ msg: 'Bu dosyayı silme yetkiniz yok veya dosya bulunamadı!' });
+});
+
+// Vote to Delete Endpoint
+app.post('/files/:filename/vote', (req, res) => {
+    const filename = req.params.filename;
+    const ip = getClientIp(req);
+    const metadata = getMetadata();
+    
+    if (!metadata.votes) metadata.votes = {};
+    if (!metadata.votes[filename]) metadata.votes[filename] = [];
+    
+    if (metadata.votes[filename].includes(ip)) {
+        return res.status(400).json({ msg: 'Zaten oy verdiniz!' });
+    }
+    
+    metadata.votes[filename].push(ip);
+    
+    if (metadata.votes[filename].length >= 3) {
+        const filePath = path.join(uploadDir, filename);
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        delete metadata[filename];
+        delete metadata.votes[filename];
+        saveMetadata(metadata);
+        return res.json({ msg: 'Dosya yeterli oya ulaştı ve silindi!', deleted: true });
+    }
+    
+    saveMetadata(metadata);
+    return res.json({ msg: 'Oy kaydedildi!', votes: metadata.votes[filename].length, deleted: false });
 });
 
 app.listen(PORT, () => {

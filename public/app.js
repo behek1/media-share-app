@@ -232,6 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <i class="fa-solid fa-trash"></i>
                 </button>
             `;
+        } else {
+            const voteClass = file.hasVoted ? 'voted' : '';
+            const voteText = file.hasVoted ? 'Oy Verildi' : 'Silme Oyu';
+            deleteBtnHtml = `
+                <button class="vote-btn ${voteClass}" data-filename="${file.name}" title="Bu dosyanın silinmesi için oy ver">
+                    <i class="fa-solid fa-thumbs-down"></i> <span class="vote-text">${voteText}</span> <span class="vote-count">(${file.votes}/3)</span>
+                </button>
+            `;
         }
 
         div.innerHTML = `
@@ -282,6 +290,38 @@ document.addEventListener('DOMContentLoaded', () => {
                             deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
                         });
                 }
+            });
+        }
+
+        // Vote functionality
+        const voteBtn = div.querySelector('.vote-btn');
+        if (voteBtn && !file.hasVoted) {
+            voteBtn.addEventListener('click', () => {
+                const filename = voteBtn.getAttribute('data-filename');
+                const originalHtml = voteBtn.innerHTML;
+                voteBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                voteBtn.disabled = true;
+                
+                fetch(`/files/${filename}/vote`, { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.deleted) {
+                            div.style.display = 'none';
+                            alert('Dosya 3 oya ulaştı ve silindi!');
+                        } else if (data.votes !== undefined) {
+                            voteBtn.innerHTML = `<i class="fa-solid fa-thumbs-down"></i> <span class="vote-text">Oy Verildi</span> <span class="vote-count">(${data.votes}/3)</span>`;
+                            voteBtn.classList.add('voted');
+                        } else {
+                            alert(data.msg);
+                            voteBtn.innerHTML = originalHtml;
+                            voteBtn.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        alert('Oy verme sırasında hata oluştu.');
+                        voteBtn.disabled = false;
+                        voteBtn.innerHTML = originalHtml;
+                    });
             });
         }
         
